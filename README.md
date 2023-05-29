@@ -23,7 +23,7 @@ var orm *gorm.DB
 
 // C
 
-err := ghlpr.W(&MyModel{
+err := ezg.W(&MyModel{
 	Foo: "hello",
 	Bar: "world!",
 }).Insert(orm)
@@ -31,7 +31,7 @@ err := ghlpr.W(&MyModel{
 
 // R
 
-mod, err := ghlpr.W(&MyModel{
+mod, err := ezg.W(&MyModel{
 	Foo: "hello",
 }).FindOne(orm)
 
@@ -49,11 +49,11 @@ if mod != nil {
 
 mod.Bar = "new bar"
 
-err = ghlpr.W(mod).Update(orm)
+err = ezg.W(mod).Update(orm)
 
 // D
 
-err = ghlpr.W(mod).Delete(orm)
+err = ezg.W(mod).Delete(orm)
 
 
 ```
