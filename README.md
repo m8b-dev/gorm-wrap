@@ -57,42 +57,70 @@ err = ezg.W(mod).Delete(orm)
 
 // Preload
 
-type PreloadedSingleArticle struct {
-	gorm.Model
-	Title string
-	Content string
-	CreatedByUserId uint `gorm:""`
-	CreatedByUser   User `gorm:"foreignKey:CreatedByUserId;references:ID"`
+type Image struct {
+    gorm.Model
+
+    Slug      string
+    StorePath string
+
+    ArticleId uint
 }
 
-type PreloadedMultipleArticle struct {
-	gorm.Model
-	Title string
-	Content string
-	CreatedByUserId uint `gorm:""`
-	CreatedByUser   User `gorm:"foreignKey:CreatedByUserId;references:ID"`
-	WebsiteId uint `gorm:""`
-	Website Website `gorm:"foreignKey:WebsiteId;references:ID"`
+type Tag struct {
+    gorm.Model
+
+    Name string
+    Slug string
+
+    ArticleId uint
+}
+
+type Article struct {
+    gorm.Model
+
+    Title   string
+    Content string
+    Tags    []Tag
+    Images  []Image
+
+    UserId uint
 }
 
 type User struct {
-	gorm.Model
-	Username string
+    gorm.Model
+
+    Username string
+    Articles []Article
 }
 
-type Website struct {
-	gorm.Model
-	Address string
+func (u *User) RequiresPreload() (string, func(*gorm.DB) *gorm.DB) {
+    return "Article", nil
 }
 
-// Declare single preload
-func (c *PreloadedSingleArticle) RequiresPreload() (string, func(*gorm.DB) *gorm.DB) {
-	return "CreatedByUser", nil
+func (a *Article) RequiresPreload() ([]string, []func(orm *gorm.DB) *gorm.DB) {
+    return []string{"Tag", "Image"}, []func(*gorm.DB) *gorm.DB{func(orm *gorm.DB) *gorm.DB {
+        return orm.Order("tags.name ASC") // order tags alphabetically
+    }, nil}
 }
 
-// Declare multiple preload
-func (c *PreloadedMultipleArticle) RequiresPreload() ([]string, []func(orm *gorm.DB) *gorm.DB) {
-	return []string{"CreatedByUser", "Website"}, nil
+// example
+
+func UserInfo(orm *gorm.DB) {
+    user, err := W(&User{
+        Username: "DubbaThony",
+    }).FindOne(orm)
+    if err != nil {
+        // ..
+        return
+    }
+    if user == nil {
+        // ...
+        return
+    }
+    fmt.Printf("User %s have written %d articles:\n", user.Username, len(user.Articles))
+    for i := range user.Articles {
+        fmt.Printf("  - %s (%d images, %d tags)\n", user.Articles[i].Title, len(user.Articles[i].Images), len(user.Articles[i].Tags))
+    }
 }
 
 ```
