@@ -55,5 +55,44 @@ err = ezg.W(mod).Update(orm)
 
 err = ezg.W(mod).Delete(orm)
 
+// Preload
+
+type PreloadedSingleArticle struct {
+	gorm.Model
+	Title string
+	Content string
+	CreatedByUserId uint `gorm:""`
+	CreatedByUser   User `gorm:"foreignKey:CreatedByUserId;references:ID"`
+}
+
+type PreloadedMultipleArticle struct {
+	gorm.Model
+	Title string
+	Content string
+	CreatedByUserId uint `gorm:""`
+	CreatedByUser   User `gorm:"foreignKey:CreatedByUserId;references:ID"`
+	WebsiteId uint `gorm:""`
+	Website Website `gorm:"foreignKey:WebsiteId;references:ID"`
+}
+
+type User struct {
+	gorm.Model
+	Username string
+}
+
+type Website struct {
+	gorm.Model
+	Address string
+}
+
+// Declare single preload
+func (c *PreloadedSingleArticle) RequiresPreload() (string, func(*gorm.DB) *gorm.DB) {
+	return "CreatedByUser", nil
+}
+
+// Declare multiple preload
+func (c *PreloadedMultipleArticle) RequiresPreload() ([]string, []func(orm *gorm.DB) *gorm.DB) {
+	return []string{"CreatedByUser", "Website"}, nil
+}
 
 ```
