@@ -1,6 +1,5 @@
 package ezg
 
-
 import (
 	"errors"
 	"fmt"
@@ -317,9 +316,9 @@ func (q Q[t]) Count(db *gorm.DB) (uint64, error) {
 	}); ok {
 		return o.Count(db)
 	}
-	
+
 	count := int64(0)
-	err := db.Where(q.obj).Count(&count).Error
+	err := db.Model(q.obj).Where(q.obj).Count(&count).Error
 	if err == gorm.ErrRecordNotFound {
 		return 0, nil
 	}
@@ -343,7 +342,12 @@ func (q Q[t]) preload(qry *gorm.DB, shallow bool) *gorm.DB {
 		return qry.Preload(a, b)
 	} else if o, ok := interface{}(q.obj).(interface { // support for multi table preload
 		RequiresPreload() ([]string, []func(orm *gorm.DB) *gorm.DB)
-	}); ok {
+	}); !ok {
+		a := autoPreloads(q.obj)
+		for i := range a {
+			qry = qry.Preload(a[i])
+		}
+	} else {
 		a, b := o.RequiresPreload()
 		if b == nil || len(b) == 0 {
 			for i := range a {
