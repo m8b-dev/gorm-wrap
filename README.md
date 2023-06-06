@@ -1,17 +1,18 @@
 # Gorm wrapper
 
-This is convinience package for gorm, making the api slightly more friendly.
+This is convenience package for gorm, making the api slightly more friendly.
 
 It allows simplified usage of most common usages of gorm, removes gorm's error not found and uses nils / empty slices instead.
 
-It allows overriding convinience functions, the preloading requires minimal setup (implementing a function that defines what to use with .Preload function from gorm)
+It allows overriding convenience functions, the preloading requires minimal setup (implementing a function that defines what to use with .Preload function from gorm)
 
 Usage example:
 
 ```go
 
 type MyModel struct {
-	gorm.Model // MUST be included or it will be broken.
+	gorm.Model // MUST be included or it will be broken. It is OK to have custom struct instead of gorm.Model
+	           // but field MUST be named "Model", and MUST contain `ID uint` field.
 
 	Foo string
 	Bar string
