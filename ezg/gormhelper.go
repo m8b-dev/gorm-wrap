@@ -182,6 +182,30 @@ func (q Q[t]) FindSql(db *gorm.DB, sql string, sqlArgs ...interface{}) ([]t, err
 	return q.findSql(db, false, sql, sqlArgs...)
 }
 
+// Join retrieves a single instance of the underlying model from the database using GORM,
+// with a join on another table using a custom condition.
+// Instead of using gorm.ErrRecordNotFound it will return nil model and nil error.
+func (q Q[t]) Join(db *gorm.DB, table, condition string) (*t, error) {
+	return q.join(db, table, condition)
+}
+
+func (q Q[t]) join(db *gorm.DB, table, condition string) (*t, error) {
+	err := q.preload(
+		db.Model(q.obj).Joins(fmt.Sprintf("INNER JOIN %s ON %s", table, condition)),
+		false,
+	).First(q.obj).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		err = fmt.Errorf("failed to read database: %w", err)
+	}
+
+	return q.obj, err
+}
+
 // ShallowFindSql retrieves all instances of the underlying model from the database using GORM,
 // using a custom SQL query and without preloading any associations.
 // If the model implements a custom FindSql method, it will be used instead.
