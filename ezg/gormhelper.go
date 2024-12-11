@@ -147,7 +147,12 @@ func (q Q[t]) findOneSql(db *gorm.DB, shallow bool, sql string, sqlArgs ...inter
 // If the model implements a custom Find method, it will be used instead.
 // Instead of using gorm.ErrRecordNotFound it will return empty slice and nil error.
 func (q Q[t]) Find(db *gorm.DB) ([]t, error) {
-	return q.find(db, false)
+	return q.find(db, false, false)
+}
+
+// FindReverse retrieves all instances of the underlying model from the database using GORM in reverse order.
+func (q Q[t]) FindReverse(db *gorm.DB) ([]t, error) {
+	return q.find(db, false, true)
 }
 
 // ShallowFind retrieves all instances of the underlying model from the database using GORM,
@@ -155,18 +160,23 @@ func (q Q[t]) Find(db *gorm.DB) ([]t, error) {
 // If the model implements a custom Find method, it will be used instead.
 // Instead of using gorm.ErrRecordNotFound it will return empty slice and nil error.
 func (q Q[t]) ShallowFind(db *gorm.DB) ([]t, error) {
-	return q.find(db, true)
+	return q.find(db, true, false)
 }
 
-func (q Q[t]) find(db *gorm.DB, shallow bool) ([]t, error) {
+func (q Q[t]) find(db *gorm.DB, shallow bool, reverseOrder bool) ([]t, error) {
 	if o, ok := interface{}(q.obj).(interface {
 		Find(db *gorm.DB) ([]t, error)
 	}); ok {
 		return o.Find(db)
 	}
 
+	orderStr := "id ASC"
+	if reverseOrder {
+		orderStr = "id DESC"
+	}
+
 	out := make([]t, 0)
-	err := q.preload(db.Where(q.obj), shallow).Order("id ASC").Find(&out).Error
+	err := q.preload(db.Where(q.obj), shallow).Order(orderStr).Find(&out).Error
 
 	if err == gorm.ErrRecordNotFound {
 		return make([]t, 0), nil
